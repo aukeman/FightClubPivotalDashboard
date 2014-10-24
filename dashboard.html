@@ -1,0 +1,370 @@
+<html>
+	<head>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+		<style type="text/css">
+
+html
+{
+	background-color: #cccccc;
+	font-family: "Open Sans", helvetica, arial, sans-serif;
+	font-size: x-large;
+}
+		
+.selected
+{
+	font-weight: bold;
+
+	background-color: #dddddd;
+	
+	border-top-left-radius: .5em;
+	border-bottom-left-radius: .5em;
+}
+
+.group-menu-item
+{
+	cursor: pointer;
+}
+
+ul#group-list
+{
+	width: 10em;
+	text-align: right;
+	float: left;
+	list-style-type: none;
+	padding:0px;
+	margin:0px;
+	
+}
+
+ul#group-list li.group-menu-item
+{
+	padding-top:.2em;
+	padding-bottom:.2em;
+	
+	margin-top:1em;
+
+	padding-right: .5em;
+}
+
+div#data
+{
+	margin-left: 10em;
+	padding-left: .5em;
+	background-color: #dddddd;
+}
+
+div.story-group
+{
+	min-height:100%;
+}
+
+div.story-group div.story:nth-child(even)
+{
+	background-color: #fcfcfc;
+}
+
+div.story
+{
+	overflow: hidden;
+	position: relative;
+	min-height: 5em;
+	margin-top:5px;
+	
+	background-color:#efefef;
+	
+	padding-top: .1em;
+	padding-bottom: .1em;
+}
+
+div.story-index
+{
+	height: 100%;
+	position: absolute;
+	
+	background-color: #dddddd;
+	
+	border-top-right-radius: 2em;
+	border-bottom-right-radius: 2em;
+
+	width: 1.5em;
+}
+
+div.story-index span
+{
+	top: 50%;
+	margin-top: -.5em;
+	position: absolute;
+	
+	font-weight:bold;
+	font-size:90%;
+}
+
+div.story-description
+{
+	position: absolute;
+	top:.25em;
+	left: 2.25em;
+	right:19.75em;
+}
+
+a.story-id
+{
+	font-style:italic;
+	font-weight:bold;
+	
+	font-size: 110%;
+}
+
+div.story-metadata
+{
+	width:18em;
+	float: right;
+}
+
+ul.story-labels
+{
+	list-style-type: none;
+	margin:0px;
+	padding:0px;
+
+	float:right;
+	width:10em;
+	
+	margin-right:1em;
+	
+	font-size:75%;
+}	
+
+ul.story-labels li
+{
+	background-color:#3c6000;
+	padding-bottom:.1em;
+	padding-top:.1em;
+
+	padding-left:.25em;
+	padding-right:.25em;
+
+	border-radius: .5em;
+
+	font-style: bold;
+	color: #ffffff;
+	
+	margin-top:.1em;
+}
+
+ul.story-owners
+{
+	list-style-type: none;
+	margin:0px;
+	padding:0px;
+	
+	float: left;
+	width: 10em;
+
+	margin-right:1em;
+
+	font-size:85%;
+
+}
+
+ul.story-owners li
+{
+	background-color:#3c0060;
+	padding-bottom:.1em;
+	padding-top:.1em;
+
+	padding-left:.25em;
+	padding-right:.25em;
+
+	border-radius: .5em;
+
+	font-style: bold;
+	color: #ffffff;
+	
+	margin-top:.1em;
+}
+		</style>
+	</head>
+	<body>
+		<ul id="group-list"></ul>
+		<div id="data"></div>
+		<div id="message">Loading data, please wait...</div>
+	</body>
+	<script type="text/javascript">
+	
+var user_database = {};
+
+var stories_database = {};
+
+var pivotal_project_id = "985502"
+var pivotal_token = "5d089c9f3dc01c734dece727cc65e513";
+
+	
+$(document).ready(function()
+{
+	$.ajax({ 
+		url: "https://www.pivotaltracker.com/services/v5/projects/"+pivotal_project_id+"/memberships",
+		headers: {"X-TrackerToken": pivotal_token},
+		success: buildUserDatabaseAndRequestProject,
+		error: handleError });
+});
+
+function buildUserDatabaseAndRequestProject(data, status, jqxhr)
+{
+	for ( var idx = 0; idx < data.length; ++idx )
+	{
+		user_database[ data[idx].person.id ] = data[idx].person.name;
+	}
+
+	$.ajax({ 
+		url: "https://www.pivotaltracker.com/services/v5/projects/"+pivotal_project_id+"/iterations?scope=current",
+		headers: {"X-TrackerToken": pivotal_token},
+		success: buildStoryDatabaseCurrent,
+		error: handleError });
+};
+
+function buildStoryDatabaseCurrent(data, status, jqxhr)
+{
+	var stories = data[0].stories;
+
+	var stories_collection = [];
+
+	stories_database["Accepted"] = [];
+	
+	for ( var idx = 0; idx < stories.length; ++idx )
+	{
+		var story = stories[idx];
+		
+		if ( story.current_state == "accepted" )
+		{
+			stories_database["Accepted"].push( story );
+		}
+		else if ( story.story_type == "release" )
+		{
+			stories_database[story.name] = stories_collection;
+			stories_collection = [];
+		}
+		else
+		{
+			stories_collection.push( story );
+		}
+	}
+	
+	stories_database["In Progress"] = stories_collection;
+	
+	$.ajax({ 
+		url: "https://www.pivotaltracker.com/services/v5/projects/"+pivotal_project_id+"/iterations?scope=backlog",
+		headers: {"X-TrackerToken": pivotal_token},
+		success: buildStoryDatabaseBacklog,
+		error: handleError });
+	
+}
+
+function buildStoryDatabaseBacklog(data, status, jqxhr)
+{
+	stories_database["Backlog"] = data[0].stories;
+
+	buildDashboard();
+}
+
+function handleError( jqXHR, textStatus, errorThrown )
+{
+	$("div#message").html( "Return Status: \"" + textStatus + "\"; error loading Pivotal Tracker Data: \"" + errorThrown + "\"");
+}
+
+function buildDashboard()
+{	
+	$("div#message").remove();
+	buildGroupList( stories_database );
+	
+	for ( var name in stories_database )
+	{
+		buildGroup( name, stories_database[name] );
+	}
+
+	$(".story-group").hide();
+}
+
+function buildGroupList( stories )
+{
+	for ( var name in stories )
+	{
+		var group_id = groupNameToElementId(name);
+	
+		$("#group-list").append("<li class=\"group-menu-item\" id=\"menu-" + group_id + "\">" + groupNameToGroupLabel(name) + "</li>");
+		
+		$("#menu-" + group_id).click( buildClickHandler(group_id) );
+	}
+}
+
+function buildClickHandler( group_id )
+{
+	return function() 
+	{
+		$(".group-menu-item").removeClass("selected");
+	
+		$(".story-group").hide();
+		$("#menu-" + group_id).addClass("selected");
+		$("#" + group_id ).show();
+	};
+}
+
+function buildGroup( name, stories )
+{
+	var group_id = groupNameToElementId( name );
+
+	$("#data").append( "<div class= \"story-group\" id=\"" + group_id + "\"></div>" );
+
+	for ( var idx = 0; idx < stories.length; ++idx )
+	{
+		buildStory( idx, "#" + group_id, stories[idx] );
+	}
+	
+}
+
+function buildStory( idx, div_id, story )
+{
+		var labels = "";
+		
+		for ( var tag_idx = 0; tag_idx < story.labels.length; ++tag_idx )
+		{
+			labels += "<li class=\"label\">" + story.labels[tag_idx].name + "</li>";
+		}
+
+		var owners = "";
+		
+		for ( var owner_idx = 0; owner_idx < story.owner_ids.length; ++owner_idx )
+		{
+			var owner_id = story.owner_ids[owner_idx];
+		
+			if ( owner_id in user_database )
+			{
+				owners += "<li class=\"owner\">" + user_database[owner_id] + "</li>";
+			}
+		}		
+		
+		$(div_id).append( "<div class=\"story\" id=\"" + story.id + "\">" +
+						  "<div class=\"story-index\"><span>" + idx + "</span></div>" +
+						  "<div class=\"story-description\">" +
+						  "  <a class=\"story-id\" href=\"" + story.url + "\">" + story.id + "</a>" +
+						  "  <p class=\"story-name\">" + story.name + "</p>" +
+						  "</div>" +
+						  "<div class=\"story-metadata\">" +
+						  "<ul class=\"story-labels\">" + labels + "</ul>" +
+						  "<ul class=\"story-owners\">" + owners + "</ul>" +
+						  "</div>" +
+						  "</div>" );
+}
+
+function groupNameToGroupLabel( name )
+{
+	return name.replace(/^ */, "").replace(/ *$/, "").replace(/\^/g, ""); 
+}
+
+function groupNameToElementId( name )
+{
+	return name.replace(/\^/g, "").replace(/^ */, "").replace(/ *$/, "").replace(/\./g, "-").replace(/ /g, "-");
+}
+
+	</script>
+</html>
