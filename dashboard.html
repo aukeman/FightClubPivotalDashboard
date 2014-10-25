@@ -202,8 +202,9 @@ var ACCEPTED_LABEL = "Accepted";
 var IN_PROGRESS_LABEL = "In Progress";
 var BACKLOG_LABEL = "Backlog";
 
+
 var INFO_DEV_RELEASE = "^^ INFORMATION DEVELOPMENT ^^";
-var INFO_DEV_TASK_LABELS = [ "ID", "doc", "documentation" ];
+var INFO_DEV_TASK_LABEL_REGEX = /^((doc|documentation|info dev|id):|\[(doc|documentation|info dev|id)\])/i
 	
 $(document).ready(function()
 {
@@ -290,8 +291,48 @@ function requestOpenInfoDevTasks()
 
 function applyOpenInfoDevTasks(data)
 {
+	if ( data.length == 0 )
+	{
+		return;
+	}
+
+	var story = null;
 	
+	for ( var story_idx = 0; story_idx < stories_database[IN_PROGRESS_LABEL].length; ++story_idx )
+	{
+		if ( stories_database[IN_PROGRESS_LABEL][story_idx].id == data[0].story_id )
+		{
+			story = stories_database[IN_PROGRESS_LABEL][story_idx];
+			break;
+		}
+	}
+	
+	if ( story == null )
+	{
+		return;
+	}
+	
+	var open_info_dev_tasks = [];
+	for ( var task_idx = 0; task_idx < data.length; ++task_idx )
+	{
+		if ( isOpenInfoDevTask(data[task_idx]) )
+		{
+			open_info_dev_tasks.push(data[task_idx]);
+		}
+	}
+
+	if ( 0 < open_info_dev_tasks.length )
+	{
+		var  info_dev_group_id = groupNameToElementId( INFO_DEV_RELEASE );
+		var new_story_idx = $("#"+info_dev_group_id+">div.story").length;
+		buildStory( new_story_idx, "#"+info_dev_group_id, story, open_info_dev_tasks );
+	}
 }
+
+function isOpenInfoDevTask(task)
+{
+	return (!task.complete && task.description.match(INFO_DEV_TASK_LABEL_REGEX));
+}			 
 
 function handleError( jqXHR, textStatus, errorThrown )
 {
@@ -302,7 +343,7 @@ function buildDashboard()
 {	
 	$("div#message").remove();
 	buildGroupList( stories_database );
-	
+
 	for ( var name in stories_database )
 	{
 		buildGroup( name, stories_database[name] );
