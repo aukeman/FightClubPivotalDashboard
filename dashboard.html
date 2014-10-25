@@ -389,7 +389,7 @@ function buildGroup( name, stories )
 	
 }
 
-function buildStory( idx, div_id, story )
+function buildStory( idx, div_id, story, tasks_of_interest )
 {
 		var labels = "";
 		
@@ -410,11 +410,20 @@ function buildStory( idx, div_id, story )
 			}
 		}		
 		
+		var tasks = "";
+		for ( var task_idx = 0; typeof tasks_of_interest !== 'undefined' && task_idx < tasks_of_interest.length; ++task_idx )
+		{
+			var task = tasks_of_interest[task_idx];
+			
+			tasks += "<li class=\"task\">" + task.description + "</li>";
+		}
+		
 		$(div_id).append( "<div class=\"story\" id=\"" + story.id + "\">" +
 						  "<div class=\"story-index\"><span>" + idx + "</span></div>" +
 						  "<div class=\"story-description\">" +
 						  "  <a class=\"story-id\" href=\"" + story.url + "\">" + story.id + "</a>" +
 						  "  <p class=\"story-name\">" + story.name + "</p>" +
+						  "  <ul class=\"story-tasks\">" + tasks + "</ul>" +
 						  "</div>" +
 						  "<div class=\"story-metadata\">" +
 						  "<ul class=\"story-labels\">" + labels + "</ul>" +
