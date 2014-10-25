@@ -193,23 +193,28 @@ ul.story-owners li
 	<script type="text/javascript">
 	
 var user_database = {};
-
 var stories_database = {};
 
-var pivotal_project_id = "985502"
-var pivotal_token = "5d089c9f3dc01c734dece727cc65e513";
+var PIVOTAL_PROJECT_ID = "985502"
+var PIVOTAL_TOKEN = "5d089c9f3dc01c734dece727cc65e513";
 
+var ACCEPTED_LABEL = "Accepted";
+var IN_PROGRESS_LABEL = "In Progress";
+var BACKLOG_LABEL = "Backlog";
+
+var INFO_DEV_RELEASE = "^^ INFORMATION DEVELOPMENT ^^";
+var INFO_DEV_TASK_LABELS = [ "ID", "doc", "documentation" ];
 	
 $(document).ready(function()
 {
 	$.ajax({ 
-		url: "https://www.pivotaltracker.com/services/v5/projects/"+pivotal_project_id+"/memberships",
-		headers: {"X-TrackerToken": pivotal_token},
+		url: "https://www.pivotaltracker.com/services/v5/projects/"+PIVOTAL_PROJECT_ID+"/memberships",
+		headers: {"X-TrackerToken": PIVOTAL_TOKEN},
 		success: buildUserDatabaseAndRequestProject,
 		error: handleError });
 });
 
-function buildUserDatabaseAndRequestProject(data, status, jqxhr)
+function buildUserDatabaseAndRequestProject(data)
 {
 	for ( var idx = 0; idx < data.length; ++idx )
 	{
@@ -217,19 +222,21 @@ function buildUserDatabaseAndRequestProject(data, status, jqxhr)
 	}
 
 	$.ajax({ 
-		url: "https://www.pivotaltracker.com/services/v5/projects/"+pivotal_project_id+"/iterations?scope=current",
-		headers: {"X-TrackerToken": pivotal_token},
+		url: "https://www.pivotaltracker.com/services/v5/projects/"+PIVOTAL_PROJECT_ID+"/iterations?scope=current",
+		headers: {"X-TrackerToken": PIVOTAL_TOKEN},
 		success: buildStoryDatabaseCurrent,
 		error: handleError });
 };
 
-function buildStoryDatabaseCurrent(data, status, jqxhr)
+function buildStoryDatabaseCurrent(data)
 {
 	var stories = data[0].stories;
 
 	var stories_collection = [];
+	
+	var open_info_dev = [];
 
-	stories_database["Accepted"] = [];
+	stories_database[ACCEPTED_LABEL] = [];
 	
 	for ( var idx = 0; idx < stories.length; ++idx )
 	{
@@ -250,21 +257,40 @@ function buildStoryDatabaseCurrent(data, status, jqxhr)
 		}
 	}
 	
-	stories_database["In Progress"] = stories_collection;
-	
+	stories_database[IN_PROGRESS_LABEL] = stories_collection;
+		
 	$.ajax({ 
-		url: "https://www.pivotaltracker.com/services/v5/projects/"+pivotal_project_id+"/iterations?scope=backlog",
-		headers: {"X-TrackerToken": pivotal_token},
+		url: "https://www.pivotaltracker.com/services/v5/projects/"+PIVOTAL_PROJECT_ID+"/iterations?scope=backlog",
+		headers: {"X-TrackerToken": PIVOTAL_TOKEN},
 		success: buildStoryDatabaseBacklog,
-		error: handleError });
-	
+		error: handleError });	
 }
 
-function buildStoryDatabaseBacklog(data, status, jqxhr)
+function buildStoryDatabaseBacklog(data)
 {
-	stories_database["Backlog"] = data[0].stories;
+	stories_database[BACKLOG_LABEL] = data[0].stories;
 
+	requestOpenInfoDevTasks();
+	
 	buildDashboard();
+}
+
+function requestOpenInfoDevTasks()
+{
+	for ( var idx = 0; idx < stories_database[IN_PROGRESS_LABEL].length; ++idx )
+	{
+		var story = stories_database[IN_PROGRESS_LABEL][idx];
+	
+		$.ajax({ 
+			url: "https://www.pivotaltracker.com/services/v5/projects/"+PIVOTAL_PROJECT_ID+"/stories/"+story.id+"/tasks",
+			headers: {"X-TrackerToken": PIVOTAL_TOKEN},
+			success: applyOpenInfoDevTasks });
+	} 
+}
+
+function applyOpenInfoDevTasks(data)
+{
+	
 }
 
 function handleError( jqXHR, textStatus, errorThrown )
