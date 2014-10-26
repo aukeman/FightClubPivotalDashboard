@@ -74,19 +74,21 @@ div.story
 	
 	padding-top: .1em;
 	padding-bottom: .1em;
+
+	display:table;
+	width:100%;
 }
 
 div.story-index
 {
-	height: 100%;
-	position: absolute;
-	
 	background-color: #dddddd;
 	
 	border-top-right-radius: 2em;
 	border-bottom-right-radius: 2em;
 
 	width: 1.5em;
+
+	display:table-cell;
 }
 
 div.story-index span
@@ -101,10 +103,12 @@ div.story-index span
 
 div.story-description
 {
-	position: absolute;
-	top:.25em;
-	left: 2.25em;
-	right:19.75em;
+	padding-left:1em;
+	padding-right:1em;
+	padding-top:.25em;
+	padding-bottom:.25em;
+
+	display:table-cell;
 }
 
 a.story-id
@@ -118,7 +122,8 @@ a.story-id
 div.story-metadata
 {
 	width:18em;
-	float: right;
+
+	display:table-cell
 }
 
 ul.story-tasks
@@ -126,23 +131,20 @@ ul.story-tasks
 	font-size:85%;
 }
 
-ul.story-labels
+div.story-metadata ul
 {
 	list-style-type: none;
 	margin:0px;
 	padding:0px;
 
-	float:right;
 	width:10em;
 	
-	margin-right:1em;
 	
-	font-size:75%;
+	display:table-cell;
 }	
 
-ul.story-labels li
+div.story-metadata li
 {
-	background-color:#3c6000;
 	padding-bottom:.1em;
 	padding-top:.1em;
 
@@ -151,43 +153,26 @@ ul.story-labels li
 
 	border-radius: .5em;
 
-	font-style: bold;
+	font-weight: bold;
 	color: #ffffff;
 	
 	margin-top:.1em;
+	
+	margin-right: 1em;
 }
 
-ul.story-owners
+ul.story-labels li
 {
-	list-style-type: none;
-	margin:0px;
-	padding:0px;
-	
-	float: left;
-	width: 10em;
-
-	margin-right:1em;
-
-	font-size:85%;
-
+	font-size:75%;
+	background-color:#3c6000;
 }
 
 ul.story-owners li
 {
+	font-size:85%;
 	background-color:#3c0060;
-	padding-bottom:.1em;
-	padding-top:.1em;
-
-	padding-left:.25em;
-	padding-right:.25em;
-
-	border-radius: .5em;
-
-	font-style: bold;
-	color: #ffffff;
-	
-	margin-top:.1em;
 }
+
 		</style>
 	</head>
 	<body>
@@ -431,8 +416,8 @@ function buildStory( idx, div_id, story, tasks_of_interest )
 						  "  <ul class=\"story-tasks\">" + tasks + "</ul>" +
 						  "</div>" +
 						  "<div class=\"story-metadata\">" +
-						  "<ul class=\"story-labels\">" + labels + "</ul>" +
 						  "<ul class=\"story-owners\">" + owners + "</ul>" +
+						  "<ul class=\"story-labels\">" + labels + "</ul>" +
 						  "</div>" +
 						  "</div>" );
 }
