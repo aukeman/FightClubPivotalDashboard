@@ -207,6 +207,8 @@ $(document).ready(function()
 
 function buildUserDatabaseAndRequestProject(data)
 {
+	$("div#message").append("<br>User data received...");
+
 	for ( var idx = 0; idx < data.length; ++idx )
 	{
 		user_database[ data[idx].person.id ] = data[idx].person.name;
@@ -221,6 +223,8 @@ function buildUserDatabaseAndRequestProject(data)
 
 function buildStoryDatabaseCurrent(data)
 {
+	$("div#message").append("<br>Current iteration stories received...");
+
 	var stories = data[0].stories;
 
 	var stories_collection = [];
@@ -398,7 +402,7 @@ function buildStory( idx, div_id, story, tasks_of_interest )
 		$(div_id).append( "<div class=\"story\" id=\"" + story.id + "\">" +
 						  "<div class=\"story-index\"><span>" + idx + "</span></div>" +
 						  "<div class=\"story-description\">" +
-						  "  <a class=\"story-id\" href=\"" + story.url + "\">" + story.id + "</a>" +
+						  "  <a class=\"story-id\" href=\"" + story.url + "\" target=\"_blank\">" + story.id + "</a>" +
 						  "  <p class=\"story-name\">" + story.name + "</p>" +
 						  "  <ul class=\"story-tasks\">" + tasks + "</ul>" +
 						  "</div>" +
