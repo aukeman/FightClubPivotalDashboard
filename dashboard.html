@@ -263,7 +263,25 @@ function buildStoryDatabaseCurrent(data)
 
 function buildStoryDatabaseBacklog(data)
 {
-	stories_database[BACKLOG_LABEL] = data[0].stories;
+	var stories = data[0].stories;
+	var stories_collection = [];
+
+	for ( var idx = 0; idx < stories.length; ++idx )
+	{
+		var story = stories[idx];
+		
+		if ( story.story_type == "release" )
+		{
+			stories_database[story.name] = stories_collection;
+			stories_collection = [];
+		}
+		else
+		{
+			stories_collection.push( story );
+		}
+	}
+
+	stories_database[BACKLOG_LABEL] = stories_collection;
 
 	requestOpenInfoDevTasks();
 	
@@ -420,7 +438,7 @@ function groupNameToGroupLabel( name )
 
 function groupNameToElementId( name )
 {
-	return name.replace(/\^/g, "").replace(/^ */, "").replace(/ *$/, "").replace(/\./g, "-").replace(/ /g, "-");
+	return name.replace(/^ */, "").replace(/ *$/, "").replace(/[^0-9a-zA-Z]/g, "-");
 }
 
 	</script>
