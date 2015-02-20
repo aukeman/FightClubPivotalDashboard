@@ -193,6 +193,7 @@ var IN_PROGRESS_LABEL = "In Progress";
 var BACKLOG_LABEL = "Backlog";
 
 
+var VALIDATION_RELEASE = "^^ VALIDATION ^^";
 var INFO_DEV_RELEASE = "^^ INFORMATION DEVELOPMENT ^^";
 var INFO_DEV_TASK_LABEL_REGEX = /^((doc|documentation|info dev|id):|\[(doc|documentation|info dev|id)\])/i
 	
@@ -297,11 +298,22 @@ function requestOpenInfoDevTasks()
 		$.ajax({ 
 			url: "https://www.pivotaltracker.com/services/v5/projects/"+PIVOTAL_PROJECT_ID+"/stories/"+story.id+"/tasks",
 			headers: {"X-TrackerToken": PIVOTAL_TOKEN},
-			success: buildOpenInfoDevTaskResponseHandler(story) });
+			success: buildOpenInfoDevTaskResponseHandler(IN_PROGRESS_LABEL, story) });
 	}
+
+	for ( var idx = 0; idx < stories_database[VALIDATION_RELEASE].length; ++idx )
+	{
+		var story = stories_database[VALIDATION_RELEASE][idx];
+	
+		$.ajax({ 
+			url: "https://www.pivotaltracker.com/services/v5/projects/"+PIVOTAL_PROJECT_ID+"/stories/"+story.id+"/tasks",
+			headers: {"X-TrackerToken": PIVOTAL_TOKEN},
+			success: buildOpenInfoDevTaskResponseHandler( groupNameToGroupLabel(VALIDATION_RELEASE), story) });
+	}
+
 }
 
-function buildOpenInfoDevTaskResponseHandler( story )
+function buildOpenInfoDevTaskResponseHandler( associatedGroupName, story )
 {
 	return function (data)
 	{
@@ -323,7 +335,7 @@ function buildOpenInfoDevTaskResponseHandler( story )
 		{
 			var  info_dev_group_id = groupNameToElementId( INFO_DEV_RELEASE );
 			var new_story_idx = $("#"+info_dev_group_id+">div.story").length;
-			buildStory( new_story_idx, "#"+info_dev_group_id, story, open_info_dev_tasks );
+			buildStory( new_story_idx, "#"+info_dev_group_id, story, associatedGroupName, open_info_dev_tasks );
 		}
 	}
 }
@@ -388,7 +400,7 @@ function buildGroup( name, stories )
 	
 }
 
-function buildStory( idx, div_id, story, tasks_of_interest )
+function buildStory( idx, div_id, story, associatedGroupName, tasks_of_interest )
 {
 		var labels = "";
 		
@@ -421,6 +433,7 @@ function buildStory( idx, div_id, story, tasks_of_interest )
 						  "<div class=\"story-index\"><span>" + idx + "</span></div>" +
 						  "<div class=\"story-description\">" +
 						  "  <a class=\"story-id\" href=\"" + story.url + "\" target=\"_blank\">" + story.id + "</a>" +
+						  (typeof associatedGroupName !== 'undefined' ? "&nbsp(" + associatedGroupName + ")" : "") +
 						  "  <p class=\"story-name\">" + story.name + "</p>" +
 						  "  <ul class=\"story-tasks\">" + tasks + "</ul>" +
 						  "</div>" +
@@ -433,7 +446,7 @@ function buildStory( idx, div_id, story, tasks_of_interest )
 
 function groupNameToGroupLabel( name )
 {
-	return name.replace(/^ */, "").replace(/ *$/, "").replace(/\^/g, ""); 
+	return name.replace(/\^/g, "").replace(/^ */, "").replace(/ *$/, ""); 
 }
 
 function groupNameToElementId( name )
